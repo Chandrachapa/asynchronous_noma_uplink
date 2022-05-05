@@ -5,16 +5,17 @@ clear all;
 close all;
 clc;
 W=1;% System Bandwidth 
-sig=1; 
+sig=1;
+
 %%%%%%%%%%%%%SELECT MODEL %%%%%%%%%%%%%%%%
 k=1;
-%%%%% INTIALIZE LAGRANGIAN MULTIPLIERS %%%%%%%%%%%%%
+%%%%% INITIALIZE LAGRANGIAN MULTIPLIERS %%%%%%%%%%%%%
 lm_opt1(1)=0;
 lm_opt2(1)=0;
 mu_opt(1)=0;
 p1(1)=0;p2(1)=0;
 
-%%%%%%%%%%%% STOP CRITIRIAN  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% STOP CRITERIAN  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ep2=.01;
 
 %%%%%%%%%%%% STEP SIZE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,7 +37,7 @@ end
 itr=1000;
 for k=1:1:2
 for snr=2:1:22
-        ep1=snr;
+    ep1=snr;
     c=1;
     n=1;
 for i=1:1:itr
@@ -115,9 +116,9 @@ if k==1
     fprintf('Iteration: %d\n',i);
     fprintf('-----------------------------------------------------\n');
     fprintf(' Contraint Three =snr-(p1+p2)(approch to zero): %f\n ',P4);
-     a=p2(n);%far user high power
-     b=p1(n);%near user less power
-     c_sum(snr)=(W*(1.4427)*(log(1+((b*h1)/sig))+log(1+((a*h2)/((b*h2)+sig)))));
+    a=p2(n);%far user high power
+    b=p1(n);%near user less power
+    c_sum(snr)=(W*(1.4427)*(log(1+((b*h1)/sig))+log(1+((a*h2)/((b*h2)+sig)))));
 else
     a=.8*snr;
     b=.2*snr;
@@ -135,6 +136,3 @@ plot((c_sum2));
 axis([2 20 0 6]);
 xlabel(' Transmit Power Constraint (dB)')
 ylabel ('Sum Capacity (b/s/Hz)')
-
-
-
