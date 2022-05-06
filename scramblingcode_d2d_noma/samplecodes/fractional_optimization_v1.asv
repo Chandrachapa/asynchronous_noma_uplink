@@ -22,8 +22,11 @@ E_dec       = 0.1;% decoding energy per symbol
 ep_userk    = 1; %epsilon 1
 ep_lamk     = 1;%epsilon 2
 ep_upk      = 1;%epsilon 2
-grad_uk     = 0;%gradient of lagrangian function
+grad_u      = zeros(K,1);%gradient of lagrangian function
 t           = 0.4; %fixed learning rate
+
+%use stochastic gradient descent to converge
+nbiter       = 1000;%maximum number of iterations to converge
 
 %% environment 
 k1=5; %Rician factor %ref: https://www.researchgate.net/publication/263669548_Probability_Distribution_of_Rician_K-Factor_in_Urban_Suburban_and_Rural_Areas_Using_Real-World_Captured_Data
@@ -42,7 +45,7 @@ max_tx_power = 100;
 %transmission power of each user
 transmitpow_k = max_tx_power*abs(randn(K,1));% unsorted transmit power vector
 
-tx_pow_k = sort(transmitpow_k,'descend') %sorted transmit power vector %descending 
+tx_pow_k = sort(transmitpow_k,'descend'); %sorted transmit power vector %descending 
 
 p1 =tx_pow_k(1);%nearest user
 p2 =tx_pow_k(2);
@@ -65,37 +68,55 @@ g4 = (abs(h4)).^2;
 SNR = 20:2:40;
 snr = db2pow(SNR);
 
-C1 = mean(log2(1 +g1*p1./(g2*p2+g3*p3+g4*p4+1)));
-C2 = mean(log2(1 +g2*p2./(g3*p3+g4*p4+1)));
-C3 = mean(log2(1 +g3*p3./(g4*p4+1)));
-C4 = mean(log2(1 +g4*p4));
+C1 = B*(log2(1 +g1*p1./(g2.*p2+g3.*p3+g4.*p4+1)));
+C2 = B*(log2(1 +g2.*p2./(g3.*p3+g4.*p4+1)));
+C3 = B*(log2(1 +g3.*p3./(g4.*p4+1)));
+C4 = B*(log2(1 +g4.*p4));
+
+% lambda values 
+l1 = 1;l2 = 2;l3 = 3;l4 = 4;
+v1 = 1;v2 = 2;v3 = 3;v4 = 4;
+
+%% grad uk
+
+%calculate the grad of lagrangian objective function
+%optimizing variable 
+tr_uk(1) = 0;
+U = triu( ones(K,K) )
+sum_rate = C1+C2+C3+C4;
+sum_lambda = l1+l2+l3+l4;
+rate_vec = [C1;C2;C3;C4];
+up_vec = [1;2;3;4];
+rate_th = B*(log2(1 +g4.*p4));
+sum_energyc = E_dec*(sum(sum(U)));
+C = E_dec*(sum(U));
+lambda = [l1;l2;l3;l4];
+
+grad_u(:,1)   = sum(rate_vec,2)- beta*C'-...
+                lambda+up_vec'*(sum(rate_th - rate_vec,2)) ;
+
+grad_up(:,1)  = sum(rate_th)*ones(K,1); 
+grad_lm(:,1)  = zeros(K,1); 
 
 %% iterations
 %consider the grad of the objective function 
 
-%use stochastic gradient descent to converge
-nbiter       = 1000;%maximum number of iterations to converge
-dn           = 4;
+
+%define u vector and give an initial value to it
+U_opt(2) = U_opt(1) + t*grad_u(1);
+
+%run for two iterations
+
+%check whether it gets converged
 
 %binary vector is not positive semidefinite
 %create a posi defnite dme
-u = randn(2,1);
+u = randn(4,1)
 disp(u)
 U = u*u';
 disp(U)
-disp(diag(U));
-
-%find the expresion for data thorughput in a sic triangle 
-%find the SINR to find the througput
-%find throughput per user
-
-%for the total number of K users 
-for k = 1:K
-    
-
-
-end
-
+disp(diag(U));%should be a binary vector
+u'*sum_rate
 %optimizing variable: diag of U
 
 %{
