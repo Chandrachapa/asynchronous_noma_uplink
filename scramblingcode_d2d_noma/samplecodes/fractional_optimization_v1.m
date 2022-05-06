@@ -92,15 +92,29 @@ sum_energyc = E_dec*(sum(sum(U)));
 C = E_dec*(sum(U));
 lambda = [l1;l2;l3;l4];
 
-grad_u(:,1)   = sum(rate_vec,2)- beta*C'-lambda+up_vec'*(sum(rate_th - rate_vec,2)) ;
+grad_u(:,1)   = sum(rate_vec,2)- beta*C'-...
+                lambda+up_vec'*(sum(rate_th - rate_vec,2)) ;
 
-grad_up(:,1)    = sum(rate_th)*ones(K,1); 
-grad_lm(:,1)    = zeros(K,1); 
-
+grad_up(:,1)  = sum(rate_th)*ones(K,1); 
+grad_lm(:,1)  = zeros(K,1); 
 
 %% iterations
 %consider the grad of the objective function 
+
+
+%define u vector and give an initial value to it
 U_opt(2) = U_opt(1) + t*grad_u(1);
+
+%run for two iterations
+
+%check whether it gets converged
+
+
+%% optimization of the binary vector 
+%converting it into a positive semidefinite matrix
+
+%define the constraints
+
 
 %binary vector is not positive semidefinite
 %create a posi defnite dme
