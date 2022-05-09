@@ -127,7 +127,6 @@ end
 end
 end
 
-% c_sum=[c_sum(2) c_sum(4) c_sum(6) c_sum(8) c_sum(10) c_sum(12) c_sum(14) c_sum(16) c_sum(18) c_sum(20) c_sum(22)];
 plot((c_sum));
 axis([2 20 0 6]);
 grid on;
