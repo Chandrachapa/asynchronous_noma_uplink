@@ -16,7 +16,7 @@ rng(randnumber);
 K = 4;
 
 %use stochastic gradient descent to converge
-nbiter      = 3;%maximum number of iterations to converge
+nbiter      = 1000;%maximum number of iterations to converge
 
 %initialize the optimizing variables
 lam_opt(1)  = 0;%lambda 
@@ -124,17 +124,20 @@ n = 1;
 grad_uk(:,n) = zeros(K,1);
 
 uk    = zeros(K,nbiter+1);
-lam1k = ones(K,nbiter+1);
-lam2k = ones(K,nbiter+1);
-lam3k = ones(K,nbiter+1);
-lam4k = ones(K,nbiter+1);
-lam5k = ones(K,nbiter+1);
 
-grad_lam1k = ones(K,1);
-grad_lam2k = ones(K,1);
-grad_lam3k = ones(K,1);
-grad_lam4k = ones(K,1);
-grad_lam5k = ones(K,1);
+k0 = 0.4;
+lam1k = k0*ones(K,nbiter+1);
+lam2k = k0*ones(K,nbiter+1);
+lam3k = k0*ones(K,nbiter+1);
+lam4k = k0*ones(K,nbiter+1);
+lam5k = k0*ones(K,nbiter+1);
+
+k0 = 0.4;
+grad_lam1k = k0*ones(K,1);
+grad_lam2k = k0*ones(K,1);
+grad_lam3k = k0*ones(K,1);
+grad_lam4k = k0*ones(K,1);
+grad_lam5k = k0*ones(K,1);
 
 %stop criterian %check convergence
 ep    = 1;
@@ -149,9 +152,10 @@ elam5k= ep;
 %consider the grad of the objective function 
 %check for different snr values
 
-for j = 1:1%number of random iterations
-    
-    for m = 1:nbiter %until lambda converge
+for j = 1:10%number of random iterations
+   m = 1; 
+   converged = false;
+   while converged == false %until lambda converge
         uvec = uk(:,n);
 
         for k = 1: k-1
@@ -174,8 +178,6 @@ for j = 1:1%number of random iterations
             grad_lam2k(:,m+1) = grad_lam2k(:,m);
             lam2k(:,m+1)  = lam2k(:,m) + t*grad_lam2k(:,m);
         end
-
-        
 
         if (m >2 & lam3k(:,m+1)-lam3k(:,m)> elam3k)
             %update here
@@ -209,11 +211,13 @@ for j = 1:1%number of random iterations
         if (m>2 & lam1k(:,m+1)-lam1k(:,m)< elam1k &  lam2k(:,m+1)-lam2k(:,m)< elam2k ...
                 & lam3k(:,m+1)-lam3k(:,m)< elam3k & lam4k(:,m+1)-lam4k(:,m)< elam4k ...
                 & lam5k(:,m+1)-lam5k(:,m)< elam5k)
-            %disp(n)
-            %disp(abs(lam1k(:,n+1)-lam1k(:,n))< elam1k)
             disp('lambda converged');
             disp(m);
-            for n = 1:nbiter%until uk converge
+            converged =true;
+            
+            n = 1;
+            ukconverged = false;
+            while ukconverged == false%until uk converge
                 uvec = uk(:,n);
 
                 for k = 1: K-1
@@ -232,16 +236,17 @@ for j = 1:1%number of random iterations
                 %u(:,n+1) = u(:,n+1) >0;%convert to binary
                 if(n >2 & abs(sum(uk(:,n+1))-sum(uk(:,n)))< 0.01)%uk converge 
                     disp('yes');
-                    disp(n);
-                    disp(uk(:,n+1)>0);
+                    fprintf('%g\n', uk(end));
                     disp(uk(:,n)>0);
+                    ukconverged = true;
                     break;
                 end
-     
+            n=n+1;
             end
     
     
-    end      
+        end  
+    m = m+1; %lambda index
     %include kkt consitions as additional constraints to narrow the uk
     %solution   
     %all lamda values must be equal zero or positive  
@@ -250,3 +255,4 @@ for j = 1:1%number of random iterations
     end
 end
 %disp(uk(:,n+1)>0)
+%fprintf('Iteration: %d\n',uk);

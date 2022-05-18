@@ -16,7 +16,7 @@ rng(randnumber);
 K = 4;
 
 %use stochastic gradient descent to converge
-nbiter      = 3;%maximum number of iterations to converge
+nbiter      = 1000;%maximum number of iterations to converge
 
 %initialize the optimizing variables
 lam_opt(1)  = 0;%lambda 
@@ -151,7 +151,7 @@ elam5k= ep;
 
 for j = 1:1%number of random iterations
     
-    for m = 1:nbiter %until lambda converge
+   while converged == false %until lambda converge
         uvec = uk(:,n);
 
         for k = 1: k-1
@@ -202,18 +202,25 @@ for j = 1:1%number of random iterations
             grad_lam5k(:,m)= - sum(uk(:,m).*sumsym_dur_vec);
             lam5k(:,m+1) = lam5k(:,m) + t*grad_lam5k(:,m);
         elseif (m==1)
-            grad_lam5k(:,n+1) = grad_lam5k(:,n);
-            lam5k(:,n+1)  = lam5k(:,n) + t*grad_lam5k(:,n);
+            grad_lam5k(:,m+1) = grad_lam5k(:,m);
+            lam5k(:,m+1)  = lam5k(:,m) + t*grad_lam5k(:,m);
         end
         
-        if (n>2 & lam1k(:,n+1)-lam1k(:,n)< elam1k &  lam2k(:,n+1)-lam2k(:,n)< elam2k ...
-                & lam3k(:,n+1)-lam3k(:,n)< elam3k & lam4k(:,n+1)-lam4k(:,n)< elam4k ...
-                & lam5k(:,n+1)-lam5k(:,n)< elam5k)
+        if (m>2 & lam1k(:,m+1)-lam1k(:,m)< elam1k &  lam2k(:,m+1)-lam2k(:,m)< elam2k ...
+                & lam3k(:,m+1)-lam3k(:,m)< elam3k & lam4k(:,m+1)-lam4k(:,m)< elam4k ...
+                & lam5k(:,m+1)-lam5k(:,m)< elam5k)
             %disp(n)
             %disp(abs(lam1k(:,n+1)-lam1k(:,n))< elam1k)
             disp('lambda converged');
+            disp(m);
             
             for n = 1:nbiter%until uk converge
+                uvec = uk(:,n);
+
+                for k = 1: K-1
+                    uvec(k,n) = uk(k+1,n) - uk(k,n);
+                end
+                
                 grad_uk(:,n+1) = factorialk_vec.*ones(K,1) - lam1k(:,n) - lam2k(:,n) ...
                       -2*lam2k(:,n).*uk(:,n) ...
                       -lam3k(:,n).*(uvec(:,n)) ...
