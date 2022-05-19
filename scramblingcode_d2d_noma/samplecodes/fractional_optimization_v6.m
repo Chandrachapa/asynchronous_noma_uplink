@@ -34,9 +34,9 @@ d4 = 10; d3 = 9; d2 = 4; d1 = 3;    %Distances of users from rx
 communication_radius = d4;
 eta1 = 1;            % Path loss exponent
 eta2 = 2;
-eta3 = 4;
+eta3 = 3;
 eta4 = 7;
-etath = 5;
+etath = 4;
 
 noisepower   = 0.1;
 max_tx_power = 3;
@@ -85,7 +85,7 @@ C4 = B*(log2(1 +g4.*p4));
 %% optimization problem
 
 %symbols
-s1   = 0.8;
+s1   = 0.6;
 s2   = 0.5;
 s3   = 0.2;
 s4   = 0.1;
@@ -100,7 +100,7 @@ g_vec       = [g1;g2;g3;g4];%channel gain vector
 
 rate_th     = log2( 1 + sqrt(max_tx_power/2)*g_th/noisepower);
 desired_id  = 1;
-eth         = 1;
+eth         = 10;
 timeslot    = 1;
 
 %factorial k vector
@@ -110,8 +110,8 @@ for k = 1:K
 end
 
 for j = 1:K
-for k =1:K%interference
-    if k ~= desired_id & k > desired_id
+for k =1:K%interference %only from the next neighbor user
+    if k ~= desired_id & k == desired_id+1
         interf_vec(desired_id,1) = power_vec(k)*1*sym_dur_vec(k) + interf_vec(desired_id,1);
         sumsym_dur_vec(desired_id,1)= interf_vec(desired_id,1)  + sumsym_dur_vec(desired_id,1);
     end   
@@ -153,7 +153,7 @@ elam5k= tolerance ;
 %consider the grad of the objective function 
 %check for different snr values
 
-for j = 1:1%number of random iterations
+for j = 1:20%number of random iterations
    %m = 1; 
    convergeduk = false;
    ukconverged = false;
@@ -167,12 +167,13 @@ for j = 1:1%number of random iterations
         %% uk converge using stockastic gradient descent
         for n= 1:nbiter%until uk converge
             uvec(:,n) = uk(:,n);
-            uvec(1,n) = 1;
+            %uvec(1,n) = 1-uk(1,n);
             for k = 2: K
                 if (k<K)
                     uvec(k,n) =  (uk(k,n)-uk(k+1,n)) ;
                 else
-                    uvec(k,n) = -uk(k,n)+1;%last element+1 to prevent it satifying
+                    uvec(k,n) = -uk(k,n)+1;%last element+1 to prevent...
+                    %it satifying when its zero
                 end
             end
             
