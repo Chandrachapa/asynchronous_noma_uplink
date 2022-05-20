@@ -105,11 +105,11 @@ k=1;
 
 cvx_begin quiet
     
-    variable decision_uk(K,1) 
+    variable decision_uk(K,1) binary
     %objective
-    maximize(decision_uk'*K_vec-...
-     sum(decision_uk +...
-     decision_uk.^2))
+    minimize(-decision_uk'*K_vec-...
+     sum(decision_uk)+...
+      sum(decision_uk.^2))
     
     %constraints
     subject to
@@ -127,10 +127,10 @@ cvx_begin quiet
                   (noisepower^2+(interf_vec))... 
                   -power_vec.*mean(g_vec,2)*noisepower^2) <= 0
               
-    decision_uk'*sumsym_dur_vec <=  eth/timeslot
+    decision_uk'*sumsym_dur_vec <=  sum(sumsym_dur_vec)/timeslot
     
 cvx_end
 
 sumsym_dur_vec
-round(decision_uk)
+(decision_uk)
 end

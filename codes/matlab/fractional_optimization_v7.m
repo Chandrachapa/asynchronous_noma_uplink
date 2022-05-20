@@ -107,7 +107,9 @@ cvx_begin quiet
     variable decision_uk(K,1) binary
    
     %objective
-    maximize(decision_uk'*K_vec)
+     maximize(decision_uk'*K_vec+(...
+     1*sum(decision_uk)-...
+     1*sum(decision_uk.^2)))
     %+ 0.5*sum(decision_uk -...
      %  decision_uk.^2)-1)
     
@@ -117,10 +119,10 @@ cvx_begin quiet
     %decision_uk <= ones(K,1) 
     %zeros(K,1)  <= decision_uk 
     %sum(decision_uk - decision_uk.^2) <= 0
-    1-decision_uk(k,1) <= 0 
+    %1-decision_uk(k,1) <= 0 
     %decision_uk(k+1,1) <= decision_uk(k,1)
     %decision_uk(k+3,1)<= decision_uk(k+2,1)<= decision_uk(k+1,1)<= decision_uk(k,1)
-    1-sum(decision_uk) <= 0
+    %1-sum(decision_uk) <= 0
     %check how to use uvec
     %decision_uk(K,1) <= decision_uk(K-1,1) %use uvec vector
     
@@ -128,7 +130,7 @@ cvx_begin quiet
                   (noisepower^2+(interf_vec))... 
                   -power_vec.*mean(g_vec,2)*noisepower^2) <= 0
               
-    decision_uk'*sumsym_dur_vec <=  eth/timeslot
+    decision_uk'*sumsym_dur_vec <=  sum(sumsym_dur_vec)/timeslot
     
 cvx_end
 
