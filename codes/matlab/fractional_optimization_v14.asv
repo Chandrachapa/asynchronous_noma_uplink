@@ -7,15 +7,16 @@ K = 5;
 %% environmnet
 N=10^4;  % Number of Bits
 d5 =50; d4 = 10; d3 = 9; d2 = 4; d1 = 3;    %Distances of users from rx
-communication_radius = d5;
+communication_radius = 30;%change this 
+
 eta1 = 0.01;            % Path loss exponent
 eta2 = 0.2;
 eta3 = 1;
 eta4 = 5;
 eta5 = 12;
-etath = 4;%change this 
+etath = 5;%change this 
 
-noisepower   = 0.01;
+noisepower   = 0.1;
 max_tx_power = 1;%change this
 B            = 10^6;%channel bandwidth
 
@@ -38,8 +39,8 @@ h3 = sqrt(d3^-eta3)*sqrt(p3/2)*(randn(1,N)+1i*randn(1,N))/sqrt(2);%third near us
 h4 = sqrt(d4^-eta4)*sqrt(p4/2)*(randn(1,N)+1i*randn(1,N))/sqrt(2);%far user
 h5 = sqrt(d5^-eta5)*sqrt(p4/2)*(randn(1,N)+1i*randn(1,N))/sqrt(2);%far user
 
-
-h_th = sqrt(communication_radius^-etath)*sqrt(p4/2)*(randn(1,N)+...
+pth = max_tx_power.*communication_radius^-etath;
+h_th = sqrt(communication_radius^-etath)*sqrt(pth/2)*(randn(1,N)+...
 1i*randn(1,N))/sqrt(2);
 
 %channel gains
@@ -66,15 +67,15 @@ C4 = B*(log2(1 +g4.*p4));
 %symbols
 s1   = 0.8;
 s2   = 0.5;
-s3   = 0.002;
-s4   = 0.0001;
-s5   = 0.00005;
+s3   = 0.2;
+s4   = 0.1;
+s5   = 0.5;
 
 %vectors
 interf_vec     = zeros(K,1);
 factorialk_vec = zeros(K,1);
 sumsym_dur_vec = zeros(K,1);
-sym_dur_vec = [s1;s2;s3;s4;s5];
+sym_dur_vec = [s1;s2;s3;s4;s5];%change here
 power_vec   = [p1;p2;p3;p4;p5];
 g_vec       = [g1;g2;g3;g4;g5];%channel gain vector
 
@@ -103,33 +104,73 @@ end
        
 K_vec = [5;4;3;2;1];
 k=1;
-lambda1 = 0.001;%change this
-lambda2 = 10;%change this
-lambda3 = 10;%change thi
+miter =10;
+lambda1 = 1;%change this%energy saving priority %left energy is low
+lambda2 = 0.75;%change this
+lambda3 = 2.5;%change thi
+learn_rate = 0.4;
+tolerance2 =2;
+tolerance =1;
+energy_priority = 5;%if lambda is high %energy left is low
+
+for m = 1:miter
+    
 cvx_begin quiet
     
     variable decision_uk(K,1) 
     %objective
-    minimize(-lamda1*decision_uk'*K_vec -lambda2*sum(decision_uk)+lambda3*sum(decision_uk.^2))
+    minimize(-decision_uk'*K_vec -lambda1*sum(decision_uk)+lambda1*sum(decision_uk.^2))
     
     %constraints
     subject to
     
     decision_uk <= ones(K,1) 
     zeros(K,1)  <= decision_uk 
+    
     %remove this constraint 
     decision_uk(k+4,1)<decision_uk(k+3,1)< decision_uk(k+2,1)...
         <decision_uk(k+1,1)<decision_uk(k,1)
+    sum(decision_uk)>=1
 
-    decision_uk'*(p5*mean(g_th,2)*...
+    decision_uk'*(pth*mean(g_th,2)*...%check this
                   (noisepower^2+(interf_vec))... 
                   -power_vec.*mean(g_vec,2)*noisepower^2) <= 0
               
     0.1*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
-        0.8*max_tx_power/timeslot%change interference threshold limits
+       1/(lambda1+1)*10/timeslot%change interference threshold limits
    
 cvx_end
 
 sumsym_dur_vec
-decision_uk
+decision_uk>0.8
+
+    grad_lam = -sum(decision_uk)...
+            +sum(decision_uk.^2);
+    diff  = -learn_rate*grad_lam;
+    if (abs(diff) <= tolerance)
+        convergedlam  = true;
+%stochastic gradient descent
+        grad_uk = decision_uk'*K_vec-lambda1...
+                        +lambda1'*decision_uk;
+        diffuk  = -learn_rate*1/K*grad_uk;
+        fprintf("abs diff uk %f\n",1/K*abs(mean(diffuk)));
+
+         if (1/K*abs(mean(diffuk)) <= 1)
+            convergeduk  = true;
+            fprintf("%f\n",decision_uk);
+            fprintf("yes converge uk %i\n",m);
+            break;
+         else
+             lambda1    =(lambda1) + diff;
+             if (lambda1 <0)
+                 lambda1 =0;
+             end
+         end 
+    else
+        lambda1    = (lambda1 + diff);
+        if (lambda1 <0)
+                 lambda1 =0;
+        end
+    end 
+end
 end

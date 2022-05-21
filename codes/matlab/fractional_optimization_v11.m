@@ -106,6 +106,7 @@ k=1;
 lambda1 = 4.5;%change this%energy saving priority
 lambda2 = 0.75;%change this
 lambda3 = 2.5;%change thi
+
 cvx_begin quiet
     
     variable decision_uk(K,1) 
