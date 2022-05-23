@@ -11,7 +11,7 @@ close all;
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
-K =20;
+K =5;
 
 % Number of Bits
 N=10^4;  
@@ -35,6 +35,7 @@ desired_id   = 1;
 eth          = 1;
 timeslot     = 1;
 
+for i = 1:1%random iterations
 %--------------------------------------------------------------------------
 %%vectors
 %Distances of users from rx
@@ -82,7 +83,7 @@ tolerance = 0.02;%lambda
 
 %--------------------------------------------------------------------------
 
-for i = 1:20%random iterations
+
 
 %vectors
 interf_vec     = zeros(K,1);
@@ -174,7 +175,6 @@ if (abs(diff) <= tolerance)
     end 
     opt_decision_uk = decision_uk;
 end
-
 
 %% throughput of each user
 %considering synchronous uplink noma
