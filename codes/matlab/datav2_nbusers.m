@@ -11,7 +11,7 @@ close all;
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
-K =5;
+K = 7;
 
 % Number of Bits
 N=10^4;  
@@ -80,10 +80,9 @@ lambda1 = priority;%change this%energy saving priority %left energy is low
 learn_rate = 0.4;
 tolerance2 = 0.5;%uk
 tolerance = 0.02;%lambda
-Rmin =1;
+Rmin =0.000001;
+sinr_th = 1e-6;
 %--------------------------------------------------------------------------
-
-
 
 %vectors
 interf_vec     = zeros(K,1);
@@ -119,7 +118,8 @@ if (abs(diff) <= tolerance)
     
             variable decision_uk(K,1) 
             %objective
-            minimize(-decision_uk'*K_vec -lambda1*sum(decision_uk)+lambda1*sum(decision_uk.^2))
+            minimize(-decision_uk'*K_vec -lambda1*sum(decision_uk)...
+                +lambda1*sum(decision_uk.^2))
 
             %constraints
             subject to
@@ -136,9 +136,11 @@ if (abs(diff) <= tolerance)
 
             sum(decision_uk)>=1
             1<= sum(decision_uk)<= K
-            (2.^(Rmin*decision_uk)/B-1)*...%check this
-                          (noisepower^2+(interf_vec)... 
-                          -decision_uk.*power_vec.*mean(g_vec,2)) <= 0
+            decision_uk.*((noisepower^2 + (interf_vec)+power_vec.*mean(g_vec,2))...
+                -power_vec.*mean(g_vec,2)*(1+1/sinr_th) ) <= 0
+            %(2.^(Rmin.*decision_uk)/B-1).*...%check this
+                          %noisepower^2+(interf_vec)... 
+                          %-decision_uk.*power_vec.*mean(g_vec,2) <= 0
 
             0.1*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
                1/(priority+0.001)*priority_max/timeslot%change interference threshold limits
