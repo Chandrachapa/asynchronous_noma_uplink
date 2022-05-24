@@ -11,15 +11,15 @@ close all;
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
-K =5;
+K = 8;
 
 % Number of Bits
 N=10^4;  
 
 communication_radius = 30;%change this 
-max_dist = 100;
-max_eta = 15;
-etath = 4;%change this 
+max_dist     = 100;
+max_eta      = 15;
+etath        = 4;%change this 
 noisepower   = 0.1;
 max_tx_power = 10;%change this
 B            = 10^6;%channel bandwidth
@@ -27,7 +27,7 @@ B            = 10^6;%channel bandwidth
 pth          = max_tx_power.*communication_radius^-etath;
 h_th         = sqrt(communication_radius^-etath)*sqrt(pth/2)*(randn(1,N)+...
 1i*randn(1,N))/sqrt(2);
-g_th = (abs(h_th)).^2;
+g_th         = (abs(h_th)).^2;
 
 rate_th      = log2( 1 + sqrt(pth/2)*g_th/noisepower);
 
@@ -35,7 +35,7 @@ desired_id   = 1;
 eth          = 1;
 timeslot     = 1;
 
-for i = 1:1%random iterations
+for i = 1:100%random iterations
 %--------------------------------------------------------------------------
 %%vectors
 %Distances of users from rx
@@ -78,10 +78,10 @@ priority_max = 200;
 priority = 2.5;
 lambda1 = priority;%change this%energy saving priority %left energy is low
 learn_rate = 0.4;
-tolerance2 = 0.5;%uk
-tolerance = 0.02;%lambda
-Rmin =0.000001;
-
+tolerance2 = 0.5;%lambda
+tolerance = 0.02;%uk
+Rmin = 0.000001;
+sinr_th = 1e-6;
 %--------------------------------------------------------------------------
 
 %vectors
@@ -103,15 +103,17 @@ end
 end
        
 %% optimization problem
-for m = 1:1
+nbiter =100;
+for j = 1:3
+for m = 1:nbiter
     
-decision_uk = zeros(K,1);%initialize uk
+decision_uk = ones(K,1);%initialize uk
 
 grad_lam = -sum(decision_uk)...
         +sum(decision_uk.^2);
 diff  = -learn_rate*grad_lam;
 
-if (abs(diff) <= tolerance)
+    if (abs(diff) <= tolerance)
         convergedlam  = true;
         kk=1;
         cvx_begin quiet
@@ -136,10 +138,11 @@ if (abs(diff) <= tolerance)
 
             sum(decision_uk)>=1
             1<= sum(decision_uk)<= K
-            
+            decision_uk.*((noisepower^2 + (interf_vec)+power_vec.*mean(g_vec,2))...
+                -power_vec.*mean(g_vec,2)*(1+1/sinr_th) ) <= 0
             %(2.^(Rmin.*decision_uk)/B-1).*...%check this
-                          noisepower^2+(interf_vec)... 
-                          -decision_uk.*power_vec.*mean(g_vec,2) <= 0
+                          %noisepower^2+(interf_vec)... 
+                          %-decision_uk.*power_vec.*mean(g_vec,2) <= 0
 
             0.1*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
                1/(priority+0.001)*priority_max/timeslot%change interference threshold limits
@@ -147,40 +150,48 @@ if (abs(diff) <= tolerance)
            %threshold limit that a device can handle goes low
         cvx_end
         
-        sumsym_dur_vec
-        decision_uk>0.8
-        
-        %stochastic gradient descent
-        grad_uk = decision_uk'*K_vec-lambda1...
-                        +lambda1'*decision_uk;
-        diffuk  = -learn_rate*1/K*grad_uk;
-        %fprintf("abs diff uk %f\n",1/K*abs(mean(diffuk)));
-
-         if (1/K*abs(mean(diffuk)) <= tolerance2)
-            convergeduk  = true;
-            %fprintf("actual decision uk: %f\n",decision_uk);
-            fprintf("yes converge uk %i\n",m);
-            opt_decision_uk= decision_uk>0.8;
+        %sumsym_dur_vec
+        %decision_uk>0.8
+        if (isnan(decision_uk))
+            %disp('NaN uk');
+            %decision_uk = ones(K,1);%re-initialize uk
+            opt_decision_uk = opt_decision_uk;%previous answer
             break;
-         else
-            decision_uk    = decision_uk + diffuk;
-            if ((decision_uk) <zeros(K,1))
-                 decision_uk = zeros(K,1);
-            end
-         end 
+        else
+            %stochastic gradient descent
+            grad_uk = decision_uk'*K_vec-lambda1...
+                            +lambda1'*decision_uk;
+            diffuk  = -learn_rate*(1/K)*(grad_uk);
+            %fprintf("abs diff uk %f\n",1/K*abs(mean(diffuk)));
+
+            if (1/K*abs(mean(diffuk)) <= tolerance2)
+                convergeduk  = true;
+                %fprintf("actual decision uk: %f\n",decision_uk);
+                %fprintf("yes converge uk %i\n",m);
+                opt_decision_uk= decision_uk>0.8;
+                break;
+            else
+                decision_uk    = decision_uk + diffuk;
+                if ((decision_uk) <zeros(K,1))
+                     decision_uk = zeros(K,1);
+                end
+            end 
+        end
     else
+        %disp('lambda')
         lambda1    = (lambda1 + diff);
         if (lambda1 <0)
                  lambda1 =0;
         end
     end 
-    opt_decision_uk = decision_uk;
+    opt_decision_uk = decision_uk>0.8;
+end
+    %opt_decision_uk = decision_uk>0.8;
+    %disp(decision_uk);
 end
 
 %% throughput of each user
 %considering synchronous uplink noma
-SNR = 20:2:40;
-snr = db2pow(SNR);
 E_max =10;
 
 SINR_k = power_vec.*mean(g_vec,2)./(interf_vec+noisepower^2);
@@ -190,10 +201,13 @@ throughput_vec = log(1+SINR_k);
 %% energy efficiency 
 total_throughput = sum(throughput_vec);
 total_energ_consump = E_max - E_max^(exp(-log(2)/1000*opt_decision_uk'*K_vec));
-energy_eff = total_throughput/total_energ_consump
-opt_decision_uk'*K_vec
+energy_eff(i) = total_throughput/(total_energ_consump +0.01);
+opt_decision_uk'*K_vec;
 %%conv sic
-total_energ_consump_conv = E_max^(exp(-(log(2)/1000)*sum(K_vec)));
+total_energ_consump_conv =E_max - E_max^(exp(-(log(2)/1000)*sum(K_vec)));
 
-energy_eff_conv = total_throughput/total_energ_consump_conv
+energy_eff_conv(i) = total_throughput/(total_energ_consump_conv+0.01);
 end
+
+fprintf("avg energy eff proposed %f\n",mean(energy_eff));
+fprintf("avg energy eff conv %f\n",mean(energy_eff_conv));
