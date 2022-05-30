@@ -5,7 +5,6 @@
 %Output: Energy efficiency based ...
 %on number of users in ...
 %proposed optimized sic traingle decoding method
-%result:complexity vs total superimposed dat
 clc;
 clear all;
 close all;
@@ -15,18 +14,21 @@ close all;
 %%scalars
 %number of users 
 alldatadecoded = false;
-totalK = 20;
-x = zeros(totalK-1,1);
-y = zeros(totalK-1,1);
-z = zeros(totalK-1,1);
-zz = zeros(totalK-1,1);
-for h = 2: totalK
-    priority = 1.5;
+mpriority = 20;
+x = zeros(mpriority,1);
+y = zeros(mpriority,1);
+z = zeros(mpriority,1);
+zz = zeros(mpriority,1);
+for indx = 1:1:mpriority 
+    pr = 0.5 + indx;
     %rng(1);%same random seed
-    K = h;%number of superimposed data
+    K = 10;%number of superimposed data
     initialK = K;
-    [x(h-1),y(h-1),z(h-1),zz(h-1)] = seqsic(initialK,alldatadecoded,K,priority)
+    [x(indx),y(indx),z(indx),zz(indx)] = seqsic(initialK,alldatadecoded,K,pr);
+    x
+    y
 end
+
 save x.mat;
 save y.mat;
 save z.mat;
@@ -71,7 +73,7 @@ dist_k = max_dist*abs(randn(K,1));
 dist_vec = sort(dist_k,'ascend'); 
 
 % Path loss exponent
-eta_k = max_eta*abs(randn(K,1));
+eta_k   = max_eta*abs(randn(K,1));
 eta_vec = sort(eta_k,'ascend'); 
 
 % unsorted transmit power vector
@@ -165,7 +167,7 @@ diff  = -learn_rate*grad_lam;
             decision_uk.*((noisepower^2 + interf_vec + power_vec.*mean(g_vec,2))...
                 -power_vec.*mean(g_vec,2)*(1+1/sinr_th) ) <= 0
            
-            0.001*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
+            0.00001*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
                1/(priority+0.001)*priority_max/timeslot%change interference threshold limits
            %energy saving priority =lambda1 %if lambda high interference
            %threshold limit that a device can handle goes low

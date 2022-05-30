@@ -5,39 +5,22 @@
 %Output: Energy efficiency based ...
 %on number of users in ...
 %proposed optimized sic traingle decoding method
-%result:complexity vs total superimposed dat
+%results: ee vs total superimposed data
 clc;
 clear all;
 close all;
-
+rng(1);%same random seed
 %% input data: environmnet
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
 alldatadecoded = false;
-totalK = 20;
-x = zeros(totalK-1,1);
-y = zeros(totalK-1,1);
-z = zeros(totalK-1,1);
-zz = zeros(totalK-1,1);
-for h = 2: totalK
-    priority = 1.5;
-    %rng(1);%same random seed
-    K = h;%number of superimposed data
-    initialK = K;
-    [x(h-1),y(h-1),z(h-1),zz(h-1)] = seqsic(initialK,alldatadecoded,K,priority)
-end
-save x.mat;
-save y.mat;
-save z.mat;
-save zz.mat;
-
-function [a,b,c,d] = seqsic(initialK,alldatadecoded,K,priority)
-
-for nbusers = initialK: initialK%number of superimposed data loop
-for i = 1:100 %random iterations 
-v =1;
-while (alldatadecoded == false) 
+mpriority = 20;
+x = zeros(mpriority,1);
+y = zeros(mpriority,1);
+z = zeros(mpriority,1);
+zz = zeros(mpriority,1);
+%% 
 % Number of Bits
 N=10^4;  
 
@@ -47,7 +30,7 @@ max_eta      = 15;
 etath        = 4;%change this 
 noisepower   = 0.1;
 max_tx_power = 20;%change this
-B            = 10^6;%channel bandwidth
+B            = 1;%channel bandwidth
 
 pth          = max_tx_power.*communication_radius^-etath;
 h_th         = sqrt(communication_radius^-etath)*sqrt(pth/2)*(randn(1,N)+...
@@ -56,13 +39,12 @@ g_th         = (abs(h_th)).^2;
 
 rate_th      = log2( 1 + sqrt(pth/2)*g_th/noisepower);
 
-desired_id   = 1;
 eth          = 1;
 timeslot     = 1;
 
 %random iterations
 %--------------------------------------------------------------------------
-
+K = 20;%number of superimposed data
 %%vectors
 %Distances of users from rx
 dist_k = max_dist*abs(randn(K,1));
@@ -71,7 +53,7 @@ dist_k = max_dist*abs(randn(K,1));
 dist_vec = sort(dist_k,'ascend'); 
 
 % Path loss exponent
-eta_k = max_eta*abs(randn(K,1));
+eta_k   = max_eta*abs(randn(K,1));
 eta_vec = sort(eta_k,'ascend'); 
 
 % unsorted transmit power vector
@@ -93,6 +75,32 @@ g_vec = (abs(h_vec)).^2;
 %symbol interference vec
 symdur_k = 1*abs(randn(K,1));
 sym_dur_vec = sort(symdur_k,'descend');%change here
+
+pr_vec = [0.5;1;1.5;2;2.5;3;3.5;4;4.5;5;5.5;6;6.5;7.5;8;8.5;10;12;15;20];
+
+for initialK = 2:20
+    
+    fprintf("indx pr  %i %f\n",initialK,pr_vec(8));%priority: 4%change here
+    K = initialK;
+    [x(initialK-1),y(initialK-1),z(initialK-1),zz(initialK-1)] = seqsic(initialK,alldatadecoded,K,...
+        pr_vec(6),power_vec,sym_dur_vec,g_vec,max_tx_power,timeslot);
+    x
+    y
+end
+
+save x.mat;
+save y.mat;
+save z.mat;
+save zz.mat;
+
+
+function [a,b,c,d] = seqsic(initialK,alldatadecoded,K,priority,power_vec,sym_dur_vec,...
+g_vec,max_tx_power,timeslot)
+
+for nbusers = initialK: initialK%number of superimposed data loop
+for i = 1:100 %random iterations 
+v =1;
+while (alldatadecoded == false) 
 
 %nsymbols vector of each user: K vec #loop
 clear K_vec;
@@ -116,11 +124,12 @@ sinr_th = 1e-6;
 interf_vec     = zeros(K,1);
 factorialk_vec = zeros(K,1);
 sumsym_dur_vec = zeros(K,1);
-
+desired_id   = 1;
 for j = 1:K%interference vector loop
 for k =1:K
     %interference vec %only from the next neighbor user
     if k ~= desired_id & k == desired_id+1
+        
         interf_vec(desired_id,1) = power_vec(k)*1*sym_dur_vec(k)...
             + interf_vec(desired_id,1);
         sumsym_dur_vec(desired_id,1)= interf_vec(desired_id,1)...
@@ -132,8 +141,10 @@ end
        
 %% optimization problem
 nbiter = 10;
+noisepower   = 0.1;
 if(K>1)
 opt_decision_uk = ones(K,1);
+
 for j = 1:3%avoid null decision_uk loop
 for m = 1:nbiter%lambda converge until loop
     
@@ -162,10 +173,10 @@ diff  = -learn_rate*grad_lam;
 
             sum(decision_uk)>=1
             1<= sum(decision_uk)<= K
-            decision_uk.*((noisepower^2 + interf_vec + power_vec.*mean(g_vec,2))...
-                -power_vec.*mean(g_vec,2)*(1+1/sinr_th) ) <= 0
+            decision_uk.*((noisepower^2 + interf_vec + power_vec(1:K).*mean(g_vec(1:K,:),2))...
+                -power_vec(1:K).*mean(g_vec(1:K,:),2)*(1+1/sinr_th) ) <= 0
            
-            0.001*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
+            0.00001*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
                1/(priority+0.001)*priority_max/timeslot%change interference threshold limits
            %energy saving priority =lambda1 %if lambda high interference
            %threshold limit that a device can handle goes low
@@ -181,6 +192,7 @@ diff  = -learn_rate*grad_lam;
             %disp('NaN uk');
             %decision_u= ones(K,1);%re-initialize uk
             opt_decision_uk = ones(K,1);%previous answer
+            disp('isnan 1')
             break;
 
         else
@@ -215,6 +227,7 @@ diff  = -learn_rate*grad_lam;
     opt_decision_uk = decision_uk>0.8;
     if (isnan(opt_decision_uk))
         opt_decision_uk = ones(K,1);
+        disp('isnan 2')
     end
 end%end lambda converge
     %opt_decision_uk = decision_uk>0.8;
@@ -224,7 +237,7 @@ K = K-sum(opt_decision_uk);%update K
 if K<=1 
     alldatadecoded=true;
     
-    disp('break')
+    disp('break');
     %break;
 end%end if 
 end
@@ -232,20 +245,23 @@ end
 
 %% throughput of each user
 %considering synchronous uplink noma
-E_max = 10;
+E_max = 20;
 
-SINR_k = power_vec.*mean(g_vec,2)./(interf_vec+noisepower^2);
+SINR_k = power_vec(1:K).*mean(g_vec(1:K,:),2)./(interf_vec(1:K)+noisepower^2);
 
 throughput_vec = log(1+SINR_k);
 
 total_throughput = sum(throughput_vec);
-
+total_throughput = 2;%fix here????
 %% energy efficiency 
 %proposed optimal sic
 for k = 1:length(opt_decision_uk)
-    K_vec(k,1) = K-(k-1);
+    K_vec(k,1) = length(opt_decision_uk)-(k-1);
 end
 total_energ_consump = E_max - E_max^(exp(-log(2)/1000*opt_decision_uk'*K_vec));
+if(total_energ_consump<0)
+    fprintf("opt_decision_uk %i %f %f %f %f\n",K,length(opt_decision_uk),K_vec,E_max,E_max^(exp(-log(2)/1000*opt_decision_uk'*K_vec)));
+end
 energy_eff(v) = total_throughput/(total_energ_consump +0.01);
 energy_eff;
 %%conv sic
@@ -265,15 +281,16 @@ sic_complextiyconv(v) = sum(initialK)^2;
 v = v+1;
 end%end while
 
-avgenergy_eff(i) = mean(energy_eff);
-avgenergy_effconv(i) = mean(energy_eff_conv);
+avgenergy_effconv(i) = abs(mean(energy_eff_conv));
+avgenergy_eff(i) = abs(mean(energy_eff));
 
-avgcomplexity_prop(i) = mean(sic_complextiyprop);
 avgcomplexity_conv(i) = mean(sic_complextiyconv);
+avgcomplexity_prop(i) = mean(sic_complextiyprop);
 
 end
-a = mean(energy_eff);
-b = mean(energy_eff_conv);
+a = abs(mean(energy_eff_conv));
+b = abs(mean(energy_eff));
+
 c = mean(sic_complextiyconv);
 d = mean(sic_complextiyprop);
 
