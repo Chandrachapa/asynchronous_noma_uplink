@@ -1,6 +1,9 @@
-
-%date: 23 may 2022
-%function to obtain the energy efficiency based on number of users in
+%v16
+%initialized date: 23 may 2022
+%last updated: 25 may 2022
+%energy efficiency of NOMA asynchronous D2D SIC decoding
+%Output: Energy efficiency based ...
+%on number of users in ...
 %proposed optimized sic traingle decoding method
 
 clc;
@@ -11,8 +14,8 @@ close all;
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
-K = 20;
-for nbusers = 2: K
+K = 2;%number of superimposed data
+for nbusers = 2: K%number of superimposed data loop
 % Number of Bits
 N=10^4;  
 
@@ -68,7 +71,7 @@ g_vec = (abs(h_vec)).^2;
 symdur_k = 1*abs(randn(K,1));
 sym_dur_vec = sort(symdur_k,'descend'); ;%change here
 
-%nsymbols vector of each user: K vec 
+%nsymbols vector of each user: K vec #loop
 for k = 1:K
     K_vec(k,1) = K-(k-1);
 end
@@ -89,7 +92,7 @@ interf_vec     = zeros(K,1);
 factorialk_vec = zeros(K,1);
 sumsym_dur_vec = zeros(K,1);
 
-for j = 1:K
+for j = 1:K%interference vector loop
 for k =1:K
     %interference vec %only from the next neighbor user
     if k ~= desired_id & k == desired_id+1
@@ -104,8 +107,9 @@ end
        
 %% optimization problem
 nbiter =100;
-for j = 1:3
-for m = 1:nbiter
+opt_decision_uk = zeros(K,1);
+for j = 1:3%avoid null decision_uk loop
+for m = 1:nbiter%lambda converge until loop
     
 decision_uk = ones(K,1);%initialize uk
 
@@ -128,17 +132,14 @@ diff  = -learn_rate*grad_lam;
 
             decision_uk <= ones(K,1) 
             zeros(K,1)  <= decision_uk 
-
-            %remove this constraint 
-            %check this constraint
-    
+   
             for kk = 1: K-1
                 decision_uk(kk+1,1)<=decision_uk(kk,1)
             end
 
             sum(decision_uk)>=1
             1<= sum(decision_uk)<= K
-            decision_uk.*((noisepower^2 + (interf_vec)+power_vec.*mean(g_vec,2))...
+            decision_uk.*((noisepower^2 + interf_vec + power_vec.*mean(g_vec,2))...
                 -power_vec.*mean(g_vec,2)*(1+1/sinr_th) ) <= 0
            
             0.1*max_tx_power/timeslot <= decision_uk'*sumsym_dur_vec <= ...
@@ -148,7 +149,7 @@ diff  = -learn_rate*grad_lam;
         cvx_end
         
         %sumsym_dur_vec
-        %decision_uk>0.8
+        decision_uk>0.8;
         if (isnan(decision_uk))
             %disp('NaN uk');
             %decision_uk = ones(K,1);%re-initialize uk
@@ -195,9 +196,10 @@ SINR_k = power_vec.*mean(g_vec,2)./(interf_vec+noisepower^2);
 
 throughput_vec = log(1+SINR_k);
 
-%% energy efficiency 
+
 total_throughput = sum(throughput_vec);
 
+%% energy efficiency 
 %proposed optimal sic
 total_energ_consump = E_max - E_max^(exp(-log(2)/1000*opt_decision_uk'*K_vec));
 energy_eff(i) = total_throughput/(total_energ_consump +0.01);
@@ -205,6 +207,25 @@ energy_eff(i) = total_throughput/(total_energ_consump +0.01);
 %%conv sic
 total_energ_consump_conv =E_max - E_max^(exp(-(log(2)/1000)*sum(K_vec)));
 energy_eff_conv(i) = total_throughput/(total_energ_consump_conv+0.01);
+
+%% complexity analysis 
+L = 3;%number of times iterating the same SIC triangle
+%conv SIC
+if(K>L)
+    bigOorderconv  =K^2;%conv SIC over L iterations %if K>L
+else 
+    bigOorderconv  =K*L;
+end
+
+ProbConverged = 0.5;%related to BER of received data
+%optimized SIC
+if(ProbConverged == 0.5)
+ iterationsconverge = 1;
+ bigOorderoptprob = K^3*(K^2+3);
+ bigOorderprop = sum(decision_uk)^2+bigOorderoptprob;
+ %only sic decoding 
+ sic_complextiy = sum(decision_uk)^2*iterationsconverge;
+end
 end
 
 fprintf("nbusers %i\n",nbusers);
