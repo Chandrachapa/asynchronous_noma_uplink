@@ -123,6 +123,7 @@ diff  = -learn_rate*grad_lam;
         cvx_begin quiet
     
             variable decision_uk(K,1) 
+            
             %objective
             minimize(-decision_uk'*K_vec -lambda1*sum(decision_uk)...
                 +lambda1*sum(decision_uk.^2))
@@ -198,7 +199,6 @@ SINR_k = power_vec.*mean(g_vec,2)./(interf_vec+noisepower^2);
 
 throughput_vec = log(1+SINR_k);
 
-
 total_throughput = sum(throughput_vec);
 
 %% energy efficiency 
@@ -228,10 +228,11 @@ bigOorderprop = 0;
 if(ProbConverged == 0.5)
  iterationsconverge = 1;
  bigOorderoptprob = K^3*(K^2+3);
- bigOorderprop = sum(decision_uk).^2+bigOorderoptprob;
+ bigOorderprop = sum(decision_uk).^2 + bigOorderoptprob;
  %only sic decoding 
  sic_complextiy(i) = sum(opt_decision_uk)^2*iterationsconverge;
 end
+
 end
 fprintf("nbusers %i\n",nbusers);
 fprintf("avg energy eff proposed %f\n",mean(energy_eff));

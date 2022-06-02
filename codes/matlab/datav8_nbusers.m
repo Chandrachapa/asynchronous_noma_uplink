@@ -39,13 +39,13 @@ g_th         = (abs(h_th)).^2;
 
 rate_th      = log2( 1 + sqrt(pth/2)*g_th/noisepower);
 
-
 eth          = 1;
 timeslot     = 1;
 
 %random iterations
 %--------------------------------------------------------------------------
-K = 8;%number of superimposed data
+userK_vec = [3,5,8,15,20];
+K = userK_vec(4);%number of superimposed data
 %%vectors
 %Distances of users from rx
 dist_k = max_dist*abs(randn(K,1));
@@ -82,6 +82,7 @@ pr_vec = [0.5;1;1.5;2;2.5;3;3.5;4;4.5;5;5.5;6;6.5;7.5;8;8.5;10;12;15;20];
 for indx = 1:1:mpriority 
     %rng(1);%same random seed
     fprintf("indx pr  %i %f\n",indx,pr_vec(indx));
+    
     initialK = K;
     [x(indx),y(indx),z(indx),zz(indx)] = seqsic(initialK,alldatadecoded,K,...
         pr_vec(indx),power_vec,sym_dur_vec,g_vec,max_tx_power,timeslot);
@@ -117,7 +118,7 @@ lambda1 = priority;%change this%energy saving priority %left energy is low
 learn_rate = 0.4;
 tolerance2 = 0.5;%lambda
 tolerance = 0.02;%uk
-Rmin = 0.000001;
+Rmin = 1e-6;
 sinr_th = 1e-6;
 %--------------------------------------------------------------------------
 
@@ -255,8 +256,9 @@ total_throughput = 2;%fix here????
 %% energy efficiency 
 %proposed optimal sic
 for k = 1:length(opt_decision_uk)
-    K_vec(k,1) = K-(k-1);
+    K_vec(k,1) = length(opt_decision_uk)-(k-1);
 end
+
 total_energ_consump = E_max - E_max^(exp(-log(2)/1000*opt_decision_uk'*K_vec));
 energy_eff(v) = total_throughput/(total_energ_consump +0.01);
 energy_eff;

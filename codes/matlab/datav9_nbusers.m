@@ -9,17 +9,18 @@
 clc;
 clear all;
 close all;
-rng(1);%same random seed
+rng(1);%same random seed 
+
 %% input data: environmnet
 %--------------------------------------------------------------------------
 %%scalars
 %number of users 
 alldatadecoded = false;
 mpriority = 20;
-x = zeros(mpriority,1);
-y = zeros(mpriority,1);
-z = zeros(mpriority,1);
-zz = zeros(mpriority,1);
+x = zeros(mpriority-1,1);
+y = zeros(mpriority-1,1);
+z = zeros(mpriority-1,1);
+zz = zeros(mpriority-1,1);
 %% 
 % Number of Bits
 N=10^4;  
@@ -92,7 +93,6 @@ save x.mat;
 save y.mat;
 save z.mat;
 save zz.mat;
-
 
 function [a,b,c,d] = seqsic(initialK,alldatadecoded,K,priority,power_vec,sym_dur_vec,...
 g_vec,max_tx_power,timeslot)
