@@ -146,7 +146,7 @@ elam5k= 100;
 %% iterations
 %consider the grad of the objective function 
 %check for different snr values
-
+tic
 for j = 1:1
 for iter = 1:nbiter %until lambda converge
     n = iter;
@@ -228,3 +228,4 @@ for iter = 1:nbiter %until lambda converge
     %the 
 end
 end
+toc

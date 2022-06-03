@@ -5,7 +5,7 @@
 %Output: Energy efficiency based ...
 %on number of users in ...
 %proposed optimized sic traingle decoding method
-%results: ee vs total superimposed data
+%results: simulation time vs nb data %contain errors
 clc;
 clear all;
 close all;
@@ -154,10 +154,11 @@ nbiter = 10;
 
 if(K>1)
 opt_decision_uk = ones(K,1);
-tStart(v) = tic;
+%tStart(v) = tic;
 
 for j = 1:3%avoid null decision_uk loop
 perioddelay = 0;
+tStart(v) = tic;
 for m = 1:nbiter%lambda converge until loop
     
 decision_uk = ones(K,1);%initialize uk

@@ -112,7 +112,7 @@ end
 initialK_vec = K_vec;
 
 miter =10;
-priority_max = 1000;%change here
+priority_max = 200;%change here
 
 lambda1 = priority;%change this%energy saving priority %left energy is low
 learn_rate = 0.4;

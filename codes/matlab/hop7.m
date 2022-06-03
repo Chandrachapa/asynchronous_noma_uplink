@@ -1,8 +1,8 @@
-function [data_user8,data_userF,SBer1h7,SBer2h7,SBer3h7,SBerAh7,SBer4h7,SBerBh7,...
+function [averagedelay,data_user8,data_userF,SBer1h7,SBer2h7,SBer3h7,SBerAh7,SBer4h7,SBerBh7,...
     SBer5h7,SBerCh7,SBer6h7,SBerDh7,SBer7h7,SBerEh7,SBer8h7,SBerFh7,est1h6,est2h6,est3h6,estAh6,est4h6,estBh6,est5h6,estCh6,...
     est6h6,estDh6,est7h6,estEh6,est8h7,estFh7]=hop7(est1h6,est2h6,est3h6,estAh6,est4h6,estBh6,est5h6,estCh6,...
     est6h6,estDh6,est7h6,estEh6,code1,code2,code3,codeA,...
-    code4,codeB,code5,codeC,code6,codeD,code7,codeE,code8,codeF,n,N,d6,eta,p1,sigma,mean,dA,snr,data_user1,data_user2,...
+    code4,codeB,code5,codeC,code6,codeD,code7,codeE,code8,codeF,n,N,d6,eta,p1,sigma,meanst,dA,snr,data_user1,data_user2,...
     data_user3,data_userA,data_user4,data_userB,data_user5,data_userC,data_user6,data_userD,data_user7,data_userE)
 %fprintf('okay\n')
 p2=p1;
@@ -160,10 +160,10 @@ x8=esttx1+esttx2+esttx3+esttxA+esttx4+esttxB+esttx5+esttxC...
 %rician fading channel 
 %rician fading channel 
 %----------------------Creating a new Rayleigh Channel---------------------------
-gain18=sqrt(d6^-eta)*sqrt(p1/2)*[randn(1,N)*sigma+mean + j*randn(1,N)*sigma];   % Gain for Tap1
-gain28=sqrt(p2/2)*[randn(1,N)*sigma+mean + j*randn(1,N)*sigma];   % Gain for Tap2
-gain38=sqrt(p3/2)*[randn(1,N)*sigma+mean + j*randn(1,N)*sigma];   % Gain for Tap3
-gain48=sqrt(p4/2)*[randn(1,N)*sigma+mean + j*randn(1,N)*sigma];   % Gain for Tap4
+gain18=sqrt(d6^-eta)*sqrt(p1/2)*[randn(1,N)*sigma+meanst + j*randn(1,N)*sigma];   % Gain for Tap1
+gain28=sqrt(p2/2)*[randn(1,N)*sigma+meanst + j*randn(1,N)*sigma];   % Gain for Tap2
+gain38=sqrt(p3/2)*[randn(1,N)*sigma+meanst + j*randn(1,N)*sigma];   % Gain for Tap3
+gain48=sqrt(p4/2)*[randn(1,N)*sigma+meanst + j*randn(1,N)*sigma];   % Gain for Tap4
 x41=x8(:);
 x42=reshape(x41,1,length(x41));
 i=1:length(x42);        
@@ -216,7 +216,12 @@ data_noise7=data_channelhop7 (:);
 data_noise77=reshape(data_noise7,1,length(data_noise7));
 noise77 = 1/sqrt(2)*[randn(1,length(data_noise77)) + j*randn(1,length(data_noise77))];
 
+tstart = 0;
+tstop = 0;
+v = 1;
 for i = 1:length(snr)
+tic
+
 y7 = data_noise77 + (sqrt(1)*10^(-snr(i)/20))*noise77; %Addition of Noise
   
 %--------------------------Receiver ---------------------------------------
@@ -325,7 +330,8 @@ recdataF=(data_equilizedF'*code8'-x8user_hat')';
 estFh7=real(recdataF)>0;
 errors_userF(i) = size(find([data_userF- estFh7]),2); %Errors for User1
 SBerFh7= errors_userF/N;  
-
+tstop(v) = toc
+v = v+1;
 end
-
+averagedelay = mean(tstop)
 end
