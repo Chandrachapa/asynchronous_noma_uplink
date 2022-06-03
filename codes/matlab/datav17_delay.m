@@ -157,6 +157,7 @@ opt_decision_uk = ones(K,1);
 tStart(v) = tic;
 
 for j = 1:3%avoid null decision_uk loop
+perioddelay = 0;
 for m = 1:nbiter%lambda converge until loop
     
 decision_uk = ones(K,1);%initialize uk
@@ -252,6 +253,10 @@ if K<=1
     tend(v) = toc(tStart(v));
     disp('break');
     %break;
+else
+   perioddelay = 0.14;
+   tStart(v) = tStart(v)+perioddelay; 
+   
 end%end if 
 end
 
@@ -289,8 +294,9 @@ energy_eff_conv(v) = total_throughput/(total_energ_consump_conv+0.01);
 energy_eff_conv;
 
 convtstart = tic;
-for l = 1: K
-    
+for l = 1: sum(K_vec)
+   for g = 1:sum(K_vec) 
+   end
 end
 convtend(v) = toc(convtstart);
 

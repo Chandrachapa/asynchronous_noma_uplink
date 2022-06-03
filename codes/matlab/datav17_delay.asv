@@ -22,6 +22,7 @@ y = zeros(mpriority-1,1);
 z = zeros(mpriority-1,1);
 zz = zeros(mpriority-1,1);
 d = zeros(mpriority-1,1);
+e = zeros(mpriority-1,1);
 %% 
 % Number of Bits
 N=10^4;  
@@ -89,9 +90,12 @@ pr_vec = [0.5;1;1.5;2;2.5;3;3.5;4;4.5;5;5.5;6;6.5;7.5;8;8.5;10;12;15;20];
     min_interf = 1e-6;
     fprintf("indx pr  %i %f\n",initialK,pr_vec(8));%priority: 4%change here
     K = initialK;
-    [x(initialK-1),y(initialK-1),z(initialK-1),zz(initialK-1),d(initialK-1),] = seqsic(initialK,alldatadecoded,K,...
+    [x(initialK-1),y(initialK-1),z(initialK-1),zz(initialK-1),d(initialK-1),...
+        e(initialK-1)] = seqsic(initialK,alldatadecoded,K,...
         pr_vec(2),power_vec,sym_dur_vec,g_vec,max_tx_power,timeslot,noisepower,min_interf);
+    e
     d
+    
 end
 
 save x.mat;
@@ -116,7 +120,7 @@ end
 initialK_vec = K_vec;
 
 miter =10;
-priority_max = 120;
+priority_max = 50;
 
 lambda1 = priority;%change this%energy saving priority %left energy is low
 learn_rate = 0.4;%change here 
@@ -153,6 +157,7 @@ opt_decision_uk = ones(K,1);
 tStart(v) = tic;
 
 for j = 1:3%avoid null decision_uk loop
+perioddelay = 0;
 for m = 1:nbiter%lambda converge until loop
     
 decision_uk = ones(K,1);%initialize uk
@@ -245,13 +250,21 @@ end%end null uk
 K = K-sum(opt_decision_uk);%update K
 if K<=1 
     alldatadecoded=true;
-    
+    tend(v) = toc(tStart(v));
     disp('break');
     %break;
+else
+   perioddelay = 0.14;
+   tStart(v) = tStart(v)+perioddelay; 
+   
 end%end if 
 end
 
-tend(v) = toc(tStart(v));
+for l = 1: length(opt_decision_uk)
+    %decoding time
+end
+
+
 
 %% throughput of each user
 %considering synchronous uplink noma
@@ -282,7 +295,7 @@ energy_eff_conv;
 
 convtstart = tic;
 for l = 1: K
-    
+   for g = 1 
 end
 convtend(v) = toc(convtstart);
 
