@@ -4,3 +4,4 @@ Mobile devices in out-of-coverage areas have limited energy capacities and thus 
 
 An optimization algorithm for the successive interference cancellation (SIC) decoding scheme in asynchronous transmission is designed. Such an algorithm is modeled to maximize the number of symbols decoded under energy threshold constraints of SIC decoding. The considered optimization problem is computationally challenging due to the 
 coupled constraints in continuous and binary variables. In order to tackle this problem, a dual Lagrangian objective function employed to optimize the number of user data decoded per iteration in SIC. Numerical results validate the significance of the proposed sequential T-SIC scheme compare to conventional T-SIC in terms of EE, computational complexity and SIC decoding delay.
+
